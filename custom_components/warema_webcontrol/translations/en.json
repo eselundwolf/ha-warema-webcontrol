@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Warema WMS WebControl",
+        "description": "IP address or hostname of the (old) WMS WebControl.",
+        "data": { "host": "Host" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the WebControl.",
+      "no_devices": "The WebControl reports no rooms or channels."
+    },
+    "abort": { "already_configured": "This WebControl is already configured." }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Settings",
+        "data": {
+          "scan_interval": "Polling interval in seconds",
+          "tilt_open_raw": "Raw slat angle for 'open' (horizontal)",
+          "tilt_closed_raw": "Raw slat angle for 'closed'"
+        }
+      }
+    }
+  }
+}
