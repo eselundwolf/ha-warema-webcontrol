@@ -1,6 +1,8 @@
 """Draws the integration icon: a venetian blind with tilted slats and a sun.
 
-Rendered at 2048 px and downsampled for smooth edges.
+    python3 tools/make_icon.py custom_components/warema_webcontrol/brand
+
+Needs Pillow. Rendered at 2048 px and downsampled for smooth edges.
 """
 
 import sys
