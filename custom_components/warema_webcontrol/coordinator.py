@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import Channel, ChannelState, WebControlClient, WebControlError
-from .const import DOMAIN, FAST_SCAN_INTERVAL, FAST_SCAN_WINDOW, MOVE_START_GRACE
+from .const import DOMAIN, FAST_SCAN_INTERVAL, FAST_SCAN_WINDOW, MOVE_START_GRACE, STALE_AFTER
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,10 +40,21 @@ class WaremaCoordinator(DataUpdateCoordinator[dict[str, ChannelState]]):
         self._slow_interval = timedelta(seconds=scan_interval)
         self._last_full_poll = 0.0
         self._active: dict[str, float] = {}  # channel key -> time of last command
+        self._last_ok: dict[str, float] = {}  # channel key -> time of last answer
+        self._failing: set[str] = set()
 
     def mark_active(self, key: str) -> None:
         self._active[key] = time.monotonic()
         self.update_interval = timedelta(seconds=FAST_SCAN_INTERVAL)
+
+    def is_fresh(self, key: str) -> bool:
+        """A channel stays available with its last state until it has not answered for a while.
+
+        Single failed requests are common: the box only handles one client at a
+        time and radio answers get lost now and then.
+        """
+        last = self._last_ok.get(key)
+        return last is not None and time.monotonic() - last <= STALE_AFTER
 
     async def _async_update_data(self) -> dict[str, ChannelState]:
         now = time.monotonic()
@@ -58,9 +69,16 @@ class WaremaCoordinator(DataUpdateCoordinator[dict[str, ChannelState]]):
                 data[key] = await self.client.get_state(channel.room_id, channel.channel_id)
             except WebControlError as err:
                 errors += 1
-                _LOGGER.debug("Update of %s failed: %s", key, err)
+                if key not in self._failing:
+                    _LOGGER.info("%s did not answer: %s", channel.name, err)
+                self._failing.add(key)
+            else:
+                self._last_ok[key] = time.monotonic()
+                if key in self._failing:
+                    _LOGGER.info("%s answers again", channel.name)
+                self._failing.discard(key)
 
-        if keys and errors == len(keys):
+        if keys and errors == len(keys) and not any(map(self.is_fresh, self.channels)):
             raise UpdateFailed("WebControl not reachable")
         if full:
             self._last_full_poll = now

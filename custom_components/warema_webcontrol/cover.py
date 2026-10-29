@@ -118,7 +118,11 @@ class WaremaCover(CoordinatorEntity[WaremaCoordinator], CoverEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._state is not None
+        return (
+            super().available
+            and self._state is not None
+            and self.coordinator.is_fresh(self._channel.key)
+        )
 
     @property
     def current_cover_position(self) -> int | None:
