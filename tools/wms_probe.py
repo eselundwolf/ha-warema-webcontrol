@@ -40,36 +40,35 @@ class WebControl:
         time.sleep(self.delay)
         return ET.fromstring(text)
 
-    def ready(self, room: int, channel: int) -> None:
-        for _ in range(5):
-            fb = self.send(f"0323{room:02x}{channel:02x}").find("feedback")
-            if fb is None or fb.text == "1":
-                return
-        print("warning: WebControl did not report ready")
+    def send_radio(self, cmd: str) -> ET.Element:
+        """Send a radio telegram, retrying while the box reports 'stack busy' (feedback 0)."""
+        deadline = time.time() + 7
+        while True:
+            xml = self.send(cmd)
+            if xml.findtext("feedback") != "0" or time.time() >= deadline:
+                return xml
+            time.sleep(0.5)
 
     def rooms(self):
         result = []
-        try:
-            room = 0
+        room = 0
+        while True:
+            name = self.send(f"0203{room:02x}").findtext("raumname")
+            if not name:
+                break
+            channels = []
             while True:
-                name = self.send(f"0203{room:02x}").findtext("raumname")
-                if not name:
+                xml = self.send(f"0347{room:02x}{len(channels):02x}")
+                if not xml.findtext("kanalname"):
                     break
-                channels = []
-                while True:
-                    xml = self.send(f"0347{room:02x}{len(channels):02x}")
-                    if not xml.findtext("kanalname"):
-                        break
-                    channels.append(xml)
-                result.append((room, name, channels))
-                room += 1
-        finally:
-            self.send("03230000")
+                channels.append(xml)
+            result.append((room, name, channels))
+            room += 1
         return result
 
     def state(self, room: int, channel: int, timeout: float = 7.0) -> ET.Element:
         """Ask the device over the radio, then poll until its answer is there."""
-        self.ready(room, channel)
+        self.send_radio(f"0323{room:02x}{channel:02x}")
         deadline = time.time() + timeout
         while True:
             xml = self.send(f"0431{room:02x}{channel:02x}01")
@@ -81,8 +80,7 @@ class WebControl:
     def move(self, room: int, channel: int, position: int | None, angle: int | None) -> ET.Element:
         pos = 0xFF if position is None else max(0, min(100, position)) * 2
         ang = 0xFF if angle is None else max(0, min(254, angle))
-        self.ready(room, channel)
-        return self.send(f"0821{room:02x}{channel:02x}03{pos:02x}{ang:02x}ffff")
+        return self.send_radio(f"0821{room:02x}{channel:02x}03{pos:02x}{ang:02x}ffff")
 
 
 def dump(xml: ET.Element) -> str:

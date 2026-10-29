@@ -38,7 +38,6 @@ import aiohttp
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_DELAY = 0.3  # the box returns errors if requests come in too fast
-READY_RETRIES = 5
 POLL_INTERVAL = 0.5
 POLL_TIMEOUT = 7.0  # the box itself gives up after about 6 s
 UNCHANGED = 0xFF
@@ -106,12 +105,21 @@ class WebControlClient:
         except ET.ParseError as err:
             raise WebControlError(f"Invalid response to {payload}: {text!r}") from err
 
-    async def _request_position(self, room: int, channel: int) -> None:
-        for _ in range(READY_RETRIES):
-            feedback = (await self._send(f"0323{room:02x}{channel:02x}")).findtext("feedback")
+    async def _send_radio(self, cmd: str) -> None:
+        """Send a telegram that goes out over the radio.
+
+        While the box still waits for a radio answer (up to ~6 s, e.g. from a
+        device that does not answer) it rejects new telegrams with feedback 0
+        ("stack busy"), so retry until it takes it.
+        """
+        deadline = time.monotonic() + POLL_TIMEOUT
+        while True:
+            feedback = (await self._send(cmd)).findtext("feedback")
             if feedback in (None, "1"):
                 return
-        raise WebControlError(f"WebControl busy, no request sent to {room}/{channel}")
+            if time.monotonic() >= deadline:
+                raise WebControlError(f"WebControl busy, {cmd} was not sent")
+            await asyncio.sleep(POLL_INTERVAL)
 
     async def discover(self) -> list[Channel]:
         async with self._transaction:
@@ -119,25 +127,20 @@ class WebControlClient:
 
     async def _discover(self) -> list[Channel]:
         channels: list[Channel] = []
-        try:
-            room = 0
+        room = 0
+        while True:
+            room_name = (await self._send(f"0203{room:02x}")).findtext("raumname")
+            if not room_name:
+                break
+            ch = 0
             while True:
-                room_name = (await self._send(f"0203{room:02x}")).findtext("raumname")
-                if not room_name:
+                xml = await self._send(f"0347{room:02x}{ch:02x}")
+                name = xml.findtext("kanalname")
+                if not name:
                     break
-                ch = 0
-                while True:
-                    xml = await self._send(f"0347{room:02x}{ch:02x}")
-                    name = xml.findtext("kanalname")
-                    if not name:
-                        break
-                    channels.append(
-                        Channel(room, ch, room_name, name, {c.tag: c.text for c in xml})
-                    )
-                    ch += 1
-                room += 1
-        finally:
-            await self._send("03230000")
+                channels.append(Channel(room, ch, room_name, name, {c.tag: c.text for c in xml}))
+                ch += 1
+            room += 1
         return channels
 
     async def get_state(
@@ -145,7 +148,7 @@ class WebControlClient:
     ) -> ChannelState:
         """Ask the device for its state and wait up to timeout seconds for the answer."""
         async with self._transaction:
-            await self._request_position(room, channel)
+            await self._send_radio(f"0323{room:02x}{channel:02x}")
             deadline = time.monotonic() + timeout
             while True:
                 xml = await self._send(f"0431{room:02x}{channel:02x}01")
@@ -177,5 +180,4 @@ class WebControlClient:
         pos = UNCHANGED if position is None else max(0, min(100, position)) * 2
         ang = UNCHANGED if angle is None else max(0, min(254, angle))
         async with self._transaction:
-            await self._request_position(room, channel)
-            await self._send(f"0821{room:02x}{channel:02x}03{pos:02x}{ang:02x}ffff")
+            await self._send_radio(f"0821{room:02x}{channel:02x}03{pos:02x}{ang:02x}ffff")
