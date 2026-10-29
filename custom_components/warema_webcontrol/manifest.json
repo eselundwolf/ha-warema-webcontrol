@@ -1,6 +1,7 @@
 {
   "domain": "warema_webcontrol",
   "name": "Warema WMS WebControl",
+  "categories": ["blinds_curtains"],
   "codeowners": ["@eselundwolf"],
   "config_flow": true,
   "documentation": "https://github.com/eselundwolf/ha-warema-webcontrol",
