@@ -67,9 +67,16 @@ class WebControl:
             self.send("03230000")
         return result
 
-    def state(self, room: int, channel: int) -> ET.Element:
+    def state(self, room: int, channel: int, timeout: float = 7.0) -> ET.Element:
+        """Ask the device over the radio, then poll until its answer is there."""
         self.ready(room, channel)
-        return self.send(f"0431{room:02x}{channel:02x}01")
+        deadline = time.time() + timeout
+        while True:
+            xml = self.send(f"0431{room:02x}{channel:02x}01")
+            # 36 = answer, 52 = error (33: no radio answer), 50 = not there yet
+            if xml.findtext("responseID") in ("36", "52") or time.time() >= deadline:
+                return xml
+            time.sleep(0.5)
 
     def move(self, room: int, channel: int, position: int | None, angle: int | None) -> ET.Element:
         pos = 0xFF if position is None else max(0, min(100, position)) * 2

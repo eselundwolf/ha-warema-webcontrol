@@ -9,8 +9,15 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import Channel, ChannelState, WebControlClient, WebControlError
-from .const import DOMAIN, FAST_SCAN_INTERVAL, FAST_SCAN_WINDOW, MOVE_START_GRACE, STALE_AFTER
+from .api import POLL_TIMEOUT, Channel, ChannelState, WebControlClient, WebControlError
+from .const import (
+    DOMAIN,
+    FAILING_TIMEOUT,
+    FAST_SCAN_INTERVAL,
+    FAST_SCAN_WINDOW,
+    MOVE_START_GRACE,
+    STALE_AFTER,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,8 +72,14 @@ class WaremaCoordinator(DataUpdateCoordinator[dict[str, ChannelState]]):
 
         for key in keys:
             channel = self.channels[key]
+            # Waiting for the radio answer blocks the box. A device that did not
+            # answer last time (e.g. an awning without power) only gets a short
+            # wait, so it does not hold up commands to the others.
+            timeout = FAILING_TIMEOUT if key in self._failing else POLL_TIMEOUT
             try:
-                data[key] = await self.client.get_state(channel.room_id, channel.channel_id)
+                data[key] = await self.client.get_state(
+                    channel.room_id, channel.channel_id, timeout=timeout
+                )
             except WebControlError as err:
                 errors += 1
                 if key not in self._failing:
