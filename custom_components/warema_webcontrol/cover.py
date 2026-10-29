@@ -71,9 +71,11 @@ class WaremaCover(CoordinatorEntity[WaremaCoordinator], CoverEntity):
         self._tilt_open_raw = tilt_open_raw
         self._tilt_closed_raw = tilt_closed_raw
         self._attr_unique_id = f"{entry_id}_{channel.key}"
+        # The room becomes the suggested area, and Home Assistant already puts
+        # the area in front of the entity ID, so it is not repeated in the name.
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._attr_unique_id)},
-            name=f"{channel.room_name} {channel.name}",
+            name=channel.name,
             suggested_area=channel.room_name,
             manufacturer="Warema",
             model="WMS",
