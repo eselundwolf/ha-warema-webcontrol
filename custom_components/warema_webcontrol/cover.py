@@ -51,8 +51,9 @@ class WaremaCover(CoordinatorEntity[WaremaCoordinator], CoverEntity):
     """One WMS channel.
 
     WMS counts 0 = up/retracted .. 100 = down/extended, Home Assistant counts
-    0 = closed .. 100 = open, so positions are inverted. An extended awning
-    counts as "closed" (sun is blocked), like for a blind.
+    0 = closed .. 100 = open. For blinds the positions are inverted (closed =
+    fully down). An awning is only closed when fully retracted, so any extension
+    counts as open and the WMS position is used as is.
     """
 
     _attr_has_entity_name = True
@@ -90,10 +91,12 @@ class WaremaCover(CoordinatorEntity[WaremaCoordinator], CoverEntity):
             # unknown product type: awnings and roller shutters report no slat angle
             self._has_tilt = state is not None and state.angle != ANGLE_UNSUPPORTED
             is_awning = any(k in channel.name.lower() for k in AWNING_KEYWORDS)
+        self._inverted = not is_awning
         if self._has_tilt:
             self._attr_device_class = CoverDeviceClass.BLIND
         elif is_awning:
             self._attr_device_class = CoverDeviceClass.AWNING
+            self._attr_translation_key = "awning"
         else:
             self._attr_device_class = CoverDeviceClass.SHADE
 
@@ -124,9 +127,14 @@ class WaremaCover(CoordinatorEntity[WaremaCoordinator], CoverEntity):
             and self.coordinator.is_fresh(self._channel.key)
         )
 
+    def _to_ha(self, wms_position: int) -> int:
+        return 100 - wms_position if self._inverted else wms_position
+
+    _to_wms = _to_ha  # the mapping is its own inverse
+
     @property
     def current_cover_position(self) -> int | None:
-        return None if self._state is None else 100 - self._state.position
+        return None if self._state is None else self._to_ha(self._state.position)
 
     @property
     def is_closed(self) -> bool | None:
@@ -145,7 +153,7 @@ class WaremaCover(CoordinatorEntity[WaremaCoordinator], CoverEntity):
         state = self._state
         if state is None or not state.moving or self._target is None:
             return False
-        return compare(self._target, 100 - state.position)
+        return compare(self._target, self._to_ha(state.position))
 
     @property
     def current_cover_tilt_position(self) -> int | None:
@@ -172,7 +180,7 @@ class WaremaCover(CoordinatorEntity[WaremaCoordinator], CoverEntity):
 
     async def _move(self, position: int | None = None, tilt: int | None = None) -> None:
         """position/tilt in HA convention (100 = open)."""
-        wms_position = None if position is None else 100 - position
+        wms_position = None if position is None else self._to_wms(position)
         angle = None if tilt is None else self._tilt_to_raw(tilt)
         client = self.coordinator.client
         try:

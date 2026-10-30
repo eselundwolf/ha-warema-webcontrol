@@ -38,8 +38,16 @@ Alle Räume und Kanäle der WebControl werden automatisch als `cover`-Entities a
 | Raffstore (`produkttyp` 0) | `cover`, Klasse *blind*, Position + Lamellen |
 | Markise (`produkttyp` 3) | `cover`, Klasse *awning*, Position |
 
-Positionen in HA: **100 = offen** (Raffstore oben, Markise eingefahren), **0 = geschlossen**
-(Raffstore unten, Markise ausgefahren).
+Positionen in Home Assistant:
+
+| | 0 % | 100 % | Zustand |
+| --- | --- | --- | --- |
+| Raffstore | ganz unten | ganz oben | *geschlossen* nur ganz unten, sonst *offen* |
+| Markise | eingefahren | ganz ausgefahren | *Eingefahren* nur ganz eingefahren, sonst *Ausgefahren* |
+
+Bei der Markise heißt „öffnen“ also ausfahren und „schließen“ einfahren
+(`cover.open_cover` / `cover.close_cover`). Die Zustände werden als
+Eingefahren / Ausgefahren / Fährt aus / Fährt ein angezeigt.
 
 ## Lamellenwinkel kalibrieren
 

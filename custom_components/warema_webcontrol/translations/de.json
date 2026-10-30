@@ -4,14 +4,18 @@
       "user": {
         "title": "Warema WMS WebControl",
         "description": "IP-Adresse oder Hostname der (alten) WMS WebControl.",
-        "data": { "host": "Host" }
+        "data": {
+          "host": "Host"
+        }
       }
     },
     "error": {
       "cannot_connect": "Keine Verbindung zur WebControl möglich.",
       "no_devices": "Die WebControl meldet keine Räume oder Kanäle."
     },
-    "abort": { "already_configured": "Diese WebControl ist bereits eingerichtet." }
+    "abort": {
+      "already_configured": "Diese WebControl ist bereits eingerichtet."
+    }
   },
   "options": {
     "step": {
@@ -21,6 +25,18 @@
           "scan_interval": "Abfrageintervall in Sekunden",
           "tilt_open_raw": "Roh-Lamellenwinkel für 'offen' (waagerecht)",
           "tilt_closed_raw": "Roh-Lamellenwinkel für 'geschlossen'"
+        }
+      }
+    }
+  },
+  "entity": {
+    "cover": {
+      "awning": {
+        "state": {
+          "open": "Ausgefahren",
+          "closed": "Eingefahren",
+          "opening": "Fährt aus",
+          "closing": "Fährt ein"
         }
       }
     }
