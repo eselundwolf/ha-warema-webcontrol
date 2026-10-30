@@ -24,7 +24,8 @@
         "data": {
           "scan_interval": "Polling interval in seconds",
           "tilt_open_raw": "Raw slat angle for 'open' (horizontal)",
-          "tilt_closed_raw": "Raw slat angle for 'closed'"
+          "tilt_closed_raw": "Raw slat angle for 'closed'",
+          "tilt_sun_raw": "Raw slat angle for the 'Sun protection' button"
         }
       }
     }
@@ -38,6 +39,14 @@
           "opening": "Extending",
           "closing": "Retracting"
         }
+      }
+    },
+    "button": {
+      "sun_protection": {
+        "name": "Sun protection"
+      },
+      "fully_closed": {
+        "name": "Fully closed"
       }
     }
   }

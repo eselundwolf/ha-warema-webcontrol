@@ -12,7 +12,7 @@ from .api import WebControlClient, WebControlError
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
 from .coordinator import WaremaCoordinator
 
-PLATFORMS = [Platform.COVER]
+PLATFORMS = [Platform.BUTTON, Platform.COVER]
 
 type WaremaConfigEntry = ConfigEntry[WaremaCoordinator]
 

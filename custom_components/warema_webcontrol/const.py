@@ -5,6 +5,7 @@ DOMAIN = "warema_webcontrol"
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_TILT_OPEN_RAW = "tilt_open_raw"
 CONF_TILT_CLOSED_RAW = "tilt_closed_raw"
+CONF_TILT_SUN_RAW = "tilt_sun_raw"
 
 DEFAULT_SCAN_INTERVAL = 60  # seconds, radio traffic should be kept low
 FAST_SCAN_INTERVAL = 3  # seconds, while something is moving
@@ -18,6 +19,9 @@ FAILING_TIMEOUT = 2.0  # seconds to wait for a device that did not answer last t
 # closed position used while driving down.
 DEFAULT_TILT_OPEN_RAW = 127
 DEFAULT_TILT_CLOSED_RAW = 207
+# Slat angle for the "Sonnenschutz" button. 165 is where the slats rest when
+# the blinds are down; the angle of Warema's own sun automation may differ.
+DEFAULT_TILT_SUN_RAW = 165
 
 ANGLE_UNSUPPORTED = 255
 

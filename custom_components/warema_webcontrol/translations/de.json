@@ -24,7 +24,8 @@
         "data": {
           "scan_interval": "Abfrageintervall in Sekunden",
           "tilt_open_raw": "Roh-Lamellenwinkel für 'offen' (waagerecht)",
-          "tilt_closed_raw": "Roh-Lamellenwinkel für 'geschlossen'"
+          "tilt_closed_raw": "Roh-Lamellenwinkel für 'geschlossen'",
+          "tilt_sun_raw": "Roh-Lamellenwinkel für den Knopf 'Sonnenschutz'"
         }
       }
     }
@@ -38,6 +39,14 @@
           "opening": "Fährt aus",
           "closing": "Fährt ein"
         }
+      }
+    },
+    "button": {
+      "sun_protection": {
+        "name": "Sonnenschutz"
+      },
+      "fully_closed": {
+        "name": "Komplett geschlossen"
       }
     }
   }

@@ -49,6 +49,17 @@ Bei der Markise heißt „öffnen“ also ausfahren und „schließen“ einfahr
 (`cover.open_cover` / `cover.close_cover`). Die Zustände werden als
 Eingefahren / Ausgefahren / Fährt aus / Fährt ein angezeigt.
 
+## Knöpfe für Raffstoren
+
+Jeder Raffstore bekommt zwei Knöpfe (`button`), die ganz herunterfahren und die
+Lamellen in **einem** Funkbefehl einstellen (zwei Befehle nacheinander würden sich
+gegenseitig abbrechen):
+
+- **Sonnenschutz**: Lamellen auf den Sonnenschutzwinkel (Vorgabe Rohwert 165,
+  unter *Integration → Konfigurieren* einstellbar, z. B. auf den Winkel, den die
+  Warema-Automatik bei Sonne nimmt – steht im Attribut `raw_angle`)
+- **Komplett geschlossen**: Lamellen ganz zu
+
 ## Lamellenwinkel kalibrieren
 
 Die WebControl meldet den Lamellenwinkel als Rohwert (`winkel`). Gemessen an dieser Anlage:

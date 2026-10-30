@@ -16,9 +16,11 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_TILT_CLOSED_RAW,
     CONF_TILT_OPEN_RAW,
+    CONF_TILT_SUN_RAW,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TILT_CLOSED_RAW,
     DEFAULT_TILT_OPEN_RAW,
+    DEFAULT_TILT_SUN_RAW,
     DOMAIN,
 )
 
@@ -78,6 +80,10 @@ class WaremaOptionsFlow(OptionsFlow):
                     vol.Required(
                         CONF_TILT_CLOSED_RAW,
                         default=options.get(CONF_TILT_CLOSED_RAW, DEFAULT_TILT_CLOSED_RAW),
+                    ): vol.All(int, vol.Range(min=0, max=254)),
+                    vol.Required(
+                        CONF_TILT_SUN_RAW,
+                        default=options.get(CONF_TILT_SUN_RAW, DEFAULT_TILT_SUN_RAW),
                     ): vol.All(int, vol.Range(min=0, max=254)),
                 }
             ),
