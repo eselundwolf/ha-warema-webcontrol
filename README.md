@@ -55,9 +55,10 @@ Jeder Raffstore bekommt zwei Knöpfe (`button`), die ganz herunterfahren und die
 Lamellen in **einem** Funkbefehl einstellen (zwei Befehle nacheinander würden sich
 gegenseitig abbrechen):
 
-- **Sonnenschutz**: Lamellen auf den Sonnenschutzwinkel (Vorgabe Rohwert 165,
-  unter *Integration → Konfigurieren* einstellbar, z. B. auf den Winkel, den die
-  Warema-Automatik bei Sonne nimmt – steht im Attribut `raw_angle`)
+- **Sonnenschutz**: Lamellen auf den Sonnenschutzwinkel. Vorgabe ist Rohwert 165,
+  genau den stellt die Warema-Automatik bei Sonne ein (gemessen). Bei anderen
+  Anlagen unter *Integration → Konfigurieren* anpassen; den Wert der Automatik
+  zeigt das Attribut `raw_angle`.
 - **Komplett geschlossen**: Lamellen ganz zu
 
 ## Lamellenwinkel kalibrieren

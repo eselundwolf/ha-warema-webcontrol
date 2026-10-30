@@ -19,8 +19,8 @@ FAILING_TIMEOUT = 2.0  # seconds to wait for a device that did not answer last t
 # closed position used while driving down.
 DEFAULT_TILT_OPEN_RAW = 127
 DEFAULT_TILT_CLOSED_RAW = 207
-# Slat angle for the "Sonnenschutz" button. 165 is where the slats rest when
-# the blinds are down; the angle of Warema's own sun automation may differ.
+# Slat angle for the "Sonnenschutz" button: Warema's own sun automation drives
+# fully down and sets the slats to 165 (measured).
 DEFAULT_TILT_SUN_RAW = 165
 
 ANGLE_UNSUPPORTED = 255
