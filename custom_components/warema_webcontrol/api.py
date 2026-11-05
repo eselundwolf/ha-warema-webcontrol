@@ -71,6 +71,10 @@ class ChannelState:
     raw: dict[str, str | None]
 
 
+class WebControlConnectionError(WebControlError):
+    """The box itself did not answer (HTTP), as opposed to a device not answering over radio."""
+
+
 class WebControlClient:
     def __init__(self, session: aiohttp.ClientSession, host: str) -> None:
         if not host.startswith("http"):
@@ -92,11 +96,14 @@ class WebControlClient:
                     self._url,
                     params={"protocol": payload, "_": str(self._ts)},
                     timeout=aiohttp.ClientTimeout(total=10),
+                    # The box's small web server copes badly with connections
+                    # kept open between requests; close each one right away.
+                    headers={"Connection": "close"},
                 ) as resp:
                     resp.raise_for_status()
                     text = await resp.text()
             except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-                raise WebControlError(f"Request {payload} failed: {err}") from err
+                raise WebControlConnectionError(f"Request {payload} failed: {err}") from err
             finally:
                 await asyncio.sleep(REQUEST_DELAY)
         _LOGGER.debug("%s -> %s", payload, text)
@@ -120,6 +127,11 @@ class WebControlClient:
             if time.monotonic() >= deadline:
                 raise WebControlError(f"WebControl busy, {cmd} was not sent")
             await asyncio.sleep(POLL_INTERVAL)
+
+    async def ping(self) -> None:
+        """One cheap request without radio traffic: is the box's web server alive?"""
+        async with self._transaction:
+            await self._send("020300")
 
     async def discover(self) -> list[Channel]:
         async with self._transaction:

@@ -12,6 +12,7 @@ FAST_SCAN_INTERVAL = 3  # seconds, while something is moving
 FAST_SCAN_WINDOW = 120  # max seconds of fast polling after a command
 MOVE_START_GRACE = 10  # seconds before "not moving" is trusted after a command
 STALE_AFTER = 300  # seconds without answer before a channel becomes unavailable
+UNREACHABLE_INTERVAL = 120  # seconds between checks while the box itself does not answer
 FAILING_TIMEOUT = 2.0  # seconds to wait for a device that did not answer last time
 
 # Raw <winkel> values of the WebControl, measured on real venetian blinds:

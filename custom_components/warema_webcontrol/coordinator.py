@@ -9,7 +9,14 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import POLL_TIMEOUT, Channel, ChannelState, WebControlClient, WebControlError
+from .api import (
+    POLL_TIMEOUT,
+    Channel,
+    ChannelState,
+    WebControlClient,
+    WebControlConnectionError,
+    WebControlError,
+)
 from .const import (
     DOMAIN,
     FAILING_TIMEOUT,
@@ -17,6 +24,7 @@ from .const import (
     FAST_SCAN_WINDOW,
     MOVE_START_GRACE,
     STALE_AFTER,
+    UNREACHABLE_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +57,7 @@ class WaremaCoordinator(DataUpdateCoordinator[dict[str, ChannelState]]):
         self._active: dict[str, float] = {}  # channel key -> time of last command
         self._last_ok: dict[str, float] = {}  # channel key -> time of last answer
         self._failing: set[str] = set()
+        self._unreachable = False
 
     def mark_active(self, key: str) -> None:
         self._active[key] = time.monotonic()
@@ -63,7 +72,36 @@ class WaremaCoordinator(DataUpdateCoordinator[dict[str, ChannelState]]):
         last = self._last_ok.get(key)
         return last is not None and time.monotonic() - last <= STALE_AFTER
 
+    def _box_down(self, err: Exception) -> dict[str, ChannelState]:
+        """The box's web server stopped answering: back off instead of hammering it.
+
+        Until then only one light request per UNREACHABLE_INTERVAL goes out. The
+        covers keep their last state as long as it is fresh (STALE_AFTER), as a
+        single lost request is normal for this box; after that they become
+        unavailable.
+        """
+        if not self._unreachable:
+            _LOGGER.warning(
+                "WebControl not reachable (%s), checking again every %s s", err, UNREACHABLE_INTERVAL
+            )
+        self._unreachable = True
+        self._active.clear()
+        self.update_interval = timedelta(seconds=UNREACHABLE_INTERVAL)
+        if self.data and any(map(self.is_fresh, self.channels)):
+            return self.data
+        raise UpdateFailed("WebControl not reachable") from err
+
     async def _async_update_data(self) -> dict[str, ChannelState]:
+        if self._unreachable:
+            try:
+                await self.client.ping()
+            except WebControlError as err:
+                return self._box_down(err)
+            _LOGGER.warning("WebControl reachable again")
+            self._unreachable = False
+            self._last_full_poll = 0.0
+            self.update_interval = self._slow_interval
+
         now = time.monotonic()
         full = now - self._last_full_poll >= self._slow_interval.total_seconds() or not self.data
         keys = list(self.channels) if full else list(self._active)
@@ -80,6 +118,10 @@ class WaremaCoordinator(DataUpdateCoordinator[dict[str, ChannelState]]):
                 data[key] = await self.client.get_state(
                     channel.room_id, channel.channel_id, timeout=timeout
                 )
+            except WebControlConnectionError as err:
+                # The box itself is down: asking the other channels would only
+                # pile up more requests on it.
+                return self._box_down(err)
             except WebControlError as err:
                 errors += 1
                 if key not in self._failing:
