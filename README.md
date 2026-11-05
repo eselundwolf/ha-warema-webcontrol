@@ -31,6 +31,13 @@ Befehle der WebControl stammen aus dieser Bibliothek.
 3. *Einstellungen → Geräte & Dienste → Integration hinzufügen → „Warema WMS WebControl“*,
    die IP-Adresse der WebControl eintragen.
 
+> **Gib der WebControl im Router eine feste IP-Adresse** (DHCP-Reservierung, z. B.
+> Fritzbox: „Diesem Netzwerkgerät immer die gleiche IPv4-Adresse zuweisen“, UniFi:
+> Client → Einstellungen → *Fixed IP Address*). Die Box bezieht ihre Adresse per
+> DHCP und bekommt nach einem Stromausfall sonst womöglich eine neue. Hat sie schon
+> eine neue, trägst du die unter *Integration → ⋮ → Neu konfigurieren* ein;
+> Entitäten und Automationen bleiben dabei erhalten.
+
 Alle Räume und Kanäle der WebControl werden automatisch als `cover`-Entities angelegt:
 
 | WebControl | Home Assistant |
@@ -96,3 +103,35 @@ python3 tools/wms_probe.py 192.168.1.50 move 1 0 --position 100 --angle 100
   und schickt sie als neues Ziel. Das funktioniert, reagiert aber etwas verzögert.
 - Die Box verträgt keine parallelen Anfragen. Die Integration schickt deshalb alles
   nacheinander mit kurzer Pause.
+
+## Wenn alles „nicht verfügbar“ ist
+
+1. **Weboberfläche der Box im Browser öffnen** (`http://<IP der WebControl>/`).
+2. **Lädt nicht, obwohl die Box auf Ping antwortet:** Die WebControl hängt. Ping geht
+   dann noch, der Webserver nicht mehr. Box kurz vom Strom nehmen (ca. 10 s). Die
+   Integration verbindet sich danach von selbst.
+3. **Box antwortet gar nicht mehr unter der IP:** Sie hat (z. B. nach einem Neustart)
+   per DHCP eine neue Adresse bekommen. Neue IP im Router nachsehen, dort fest
+   reservieren und unter *Integration → ⋮ → Neu konfigurieren* eintragen.
+
+Damit so ein Ausfall nicht tagelang unbemerkt bleibt, hilft eine Automation, die
+meldet, wenn die Covers länger nicht verfügbar sind:
+
+```yaml
+- alias: "Warema nicht erreichbar"
+  triggers:
+    - trigger: state
+      entity_id:
+        - cover.schlafzimmer_raffstore_links    # deine Warema-Covers eintragen
+        - cover.wohnzimmer_markise
+      to: unavailable
+      for:
+        minutes: 15
+  actions:
+    - action: persistent_notification.create  # oder dein notify-Dienst
+      data:
+        title: Warema nicht erreichbar
+        message: >
+          {{ state_attr(trigger.entity_id, 'friendly_name') }} ist seit 15 Minuten
+          nicht verfügbar. WebControl kurz vom Strom nehmen.
+```

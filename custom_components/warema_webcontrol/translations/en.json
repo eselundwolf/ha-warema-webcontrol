@@ -7,6 +7,13 @@
         "data": {
           "host": "Host"
         }
+      },
+      "reconfigure": {
+        "title": "Change host",
+        "description": "New IP address or hostname of the WMS WebControl. Entities and automations are kept.",
+        "data": {
+          "host": "Host"
+        }
       }
     },
     "error": {
@@ -14,7 +21,8 @@
       "no_devices": "The WebControl reports no rooms or channels."
     },
     "abort": {
-      "already_configured": "This WebControl is already configured."
+      "already_configured": "This WebControl is already configured.",
+      "reconfigure_successful": "The address was changed."
     }
   },
   "options": {
